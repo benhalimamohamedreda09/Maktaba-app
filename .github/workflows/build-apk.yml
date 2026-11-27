@@ -1,6 +1,5 @@
 
 
-
 name: Build Android APK
 
 on:
@@ -40,29 +39,27 @@ jobs:
       - name: Add camera permission
         run: |
           python3 - <<'PY'
-          import xml.etree.ElementTree as ET
+          import re
 
           path = "android/app/src/main/AndroidManifest.xml"
-          tree = ET.parse(path)
-          root = tree.getroot()
 
-          android = "{http://schemas.android.com/apk/res/android}"
-          permission = "android.permission.CAMERA"
+          with open(path, "r", encoding="utf-8") as f:
+              content = f.read()
 
-          exists = any(
-              item.tag == "uses-permission"
-              and item.get(android + "name") == permission
-              for item in root
-          )
+          permission = '<uses-permission android:name="android.permission.CAMERA" />'
 
-          if not exists:
-              element = ET.Element(
-                  "uses-permission",
-                  {android + "name": permission}
+          if "android.permission.CAMERA" not in content:
+              content, count = re.subn(
+                  r'(<manifest\b[^>]*>)',
+                  r'\1\n    ' + permission,
+                  content,
+                  count=1
               )
-              root.insert(0, element)
+              if count != 1:
+                  raise RuntimeError("Could not find manifest tag")
 
-          tree.write(path, encoding="utf-8", xml_declaration=True)
+          with open(path, "w", encoding="utf-8") as f:
+              f.write(content)
           PY
 
       - name: Sync web app
@@ -80,3 +77,4 @@ jobs:
           name: maktaba-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
