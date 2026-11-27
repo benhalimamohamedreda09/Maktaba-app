@@ -1,5 +1,6 @@
 
 
+
 name: Build Android APK
 
 on:
@@ -36,6 +37,34 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Add camera permission
+        run: |
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+
+          path = "android/app/src/main/AndroidManifest.xml"
+          tree = ET.parse(path)
+          root = tree.getroot()
+
+          android = "{http://schemas.android.com/apk/res/android}"
+          permission = "android.permission.CAMERA"
+
+          exists = any(
+              item.tag == "uses-permission"
+              and item.get(android + "name") == permission
+              for item in root
+          )
+
+          if not exists:
+              element = ET.Element(
+                  "uses-permission",
+                  {android + "name": permission}
+              )
+              root.insert(0, element)
+
+          tree.write(path, encoding="utf-8", xml_declaration=True)
+          PY
+
       - name: Sync web app
         run: npx cap sync android
 
@@ -51,4 +80,3 @@ jobs:
           name: maktaba-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
