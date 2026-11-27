@@ -1,0 +1,8 @@
+{
+  "appId": "dz.maktaba.app",
+  "appName": "تسيير المكتبة",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
